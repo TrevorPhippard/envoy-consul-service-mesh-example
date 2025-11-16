@@ -1,0 +1,75 @@
+version: '3.9'
+
+services:
+  # ------------------------
+  # Service Hello
+  # ------------------------
+  service-hello:
+    build:
+      context: ./service-hello
+    container_name: service-hello
+    networks:
+      - mesh
+
+  service-hello-sidecar:
+    image: envoyproxy/envoy:v1.30.0
+    depends_on:
+      - service-hello
+    volumes:
+      - ./service-hello/envoy.yaml:/etc/envoy/envoy.yaml
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "debug"]
+    ports:
+      - "20001:20001"   # listener
+      - "9901:9901"     # admin
+    networks:
+      - mesh
+
+  # ------------------------
+  # Service honk
+  # ------------------------
+  service-honk:
+    build:
+      context: ./service-honk
+    container_name: service-honk
+    networks:
+      - mesh
+
+  service-honk-sidecar:
+    image: envoyproxy/envoy:v1.30.0
+    depends_on:
+      - service-honk
+    volumes:
+      - ./service-honk/envoy.yaml:/etc/envoy/envoy.yaml
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "debug"]
+    ports:
+      - "20002:20002"   # listener
+      - "9902:9902"     # admin
+    networks:
+      - mesh
+
+  # ------------------------
+  # Prometheus
+  # ------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - mesh
+
+  # ------------------------
+  # Consul
+  # ------------------------
+  consul:
+    image: hashicorp/consul:1.21.1
+    command: "agent -dev -client=0.0.0.0"
+    ports:
+      - "8500:8500"
+    networks:
+      - mesh
+
+networks:
+  mesh:
+    driver: bridge
