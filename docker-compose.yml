@@ -103,7 +103,24 @@ services:
       - "9090:9090"
     networks:
       - mesh
-
+  # ------------------------
+  # Envoy Gateway
+  # ------------------------
+  gateway:
+    image: envoyproxy/envoy:v1.30.0
+    container_name: envoy-gateway
+    depends_on:
+      - service-hello-sidecar
+      - service-honk-sidecar
+      - service-bye-sidecar
+    volumes:
+      - ./gateway/envoy-gateway.yaml:/etc/envoy/envoy.yaml
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "debug"]
+    ports:
+      - "8080:8080"   # public gateway port
+      - "9900:9900"   # admin interface
+    networks:
+      - mesh
 networks:
   mesh:
     driver: bridge
