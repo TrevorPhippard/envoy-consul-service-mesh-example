@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"service-honk/internal/consul"
 	"time"
 
@@ -15,12 +16,13 @@ func honkHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	agent := consul.NewAgent(&api.Config{Address: "127.0.0.1:8500"})
+	addr := os.Getenv("CONSUL_HTTP_ADDR")
+	agent := consul.NewAgent(&api.Config{Address: addr})
 
 	serviceCfg := consul.Config{
 		ServiceID:   "service-honk-1",
 		ServiceName: "service-honk",
-		Address:     "localhost",
+		Address:     "service-honk",
 		Port:        8080,
 		Tags:        []string{"honk"},
 		TTL:         8 * time.Second,

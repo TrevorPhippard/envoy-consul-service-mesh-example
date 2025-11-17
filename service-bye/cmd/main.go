@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"service-bye/internal/consul"
 	"time"
 
@@ -16,12 +17,13 @@ func byeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	agent := consul.NewAgent(&api.Config{Address: "127.0.0.1:8500"})
+	addr := os.Getenv("CONSUL_HTTP_ADDR")
+	agent := consul.NewAgent(&api.Config{Address: addr})
 
 	serviceCfg := consul.Config{
 		ServiceID:   "service-bye-1",
 		ServiceName: "service-bye",
-		Address:     "localhost",
+		Address:     "service-bye",
 		Port:        8080,
 		Tags:        []string{"bye"},
 		TTL:         8 * time.Second,

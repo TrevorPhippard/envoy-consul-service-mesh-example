@@ -10,39 +10,51 @@ static_resources:
             - name: envoy.filters.network.http_connection_manager
               typed_config:
                 "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-                stat_prefix: ingress_http
+                stat_prefix: honk_http
                 route_config:
-                  name: local_route_honk
+                  name: local_route
                   virtual_hosts:
-                    - name: backend_honk
+                    - name: backend
                       domains: ["*"]
                       routes:
-                        - match: { prefix: "/" }
+                        - match:
+                            prefix: "/hello"
                           route:
-                            cluster: local_service_honk
+                            cluster: service_hello
+                        - match:
+                            prefix: "/bye"
+                          route:
+                            cluster: service_bye
                 http_filters:
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 
   clusters:
-    - name: local_service_honk
-      connect_timeout: 1s
-      type: STRICT_DNS
-      lb_policy: ROUND_ROBIN
+    - name: service_hello
+      connect_timeout: 0.25s
+      type: strict_dns
+      lb_policy: round_robin
       load_assignment:
-        cluster_name: local_service_honk
+        cluster_name: service_hello
         endpoints:
           - lb_endpoints:
               - endpoint:
                   address:
                     socket_address:
-                      address: service-honk
+                      address: service-hello
                       port_value: 8080
 
-admin:
-  access_log_path: /tmp/admin_access.log
-  address:
-    socket_address:
-      address: 0.0.0.0
-      port_value: 9902
+    - name: service_bye
+      connect_timeout: 0.25s
+      type: strict_dns
+      lb_policy: round_robin
+      load_assignment:
+        cluster_name: service_bye
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: service-bye
+                      port_value: 8080

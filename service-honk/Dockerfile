@@ -1,5 +1,5 @@
 # Use Go 1.23+ to match module requirement
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o service-honk main.go
+RUN go build -o service-honk ./cmd/main.go
 
 # ---- Final lightweight image ----
 FROM alpine:3.18

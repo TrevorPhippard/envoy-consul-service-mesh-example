@@ -1,13 +1,29 @@
-version: '3.9'
+version: "3.9"
 
 services:
+  # ------------------------
+  # Consul
+  # ------------------------
+  consul:
+    image: hashicorp/consul:1.21.1
+    container_name: consul
+    command: "agent -dev -client=0.0.0.0"
+    ports:
+      - "8500:8500"    # HTTP API/UI
+      # UDP 8600 removed to avoid conflicts
+    networks:
+      - mesh
+
   # ------------------------
   # Service Hello
   # ------------------------
   service-hello:
     build:
       context: ./service-hello
-    container_name: service-hello
+    environment:
+      CONSUL_HTTP_ADDR: "http://consul:8500"
+    depends_on:
+      - consul
     networks:
       - mesh
 
@@ -25,12 +41,15 @@ services:
       - mesh
 
   # ------------------------
-  # Service honk
+  # Service Honk
   # ------------------------
   service-honk:
     build:
       context: ./service-honk
-    container_name: service-honk
+    environment:
+      CONSUL_HTTP_ADDR: "http://consul:8500"
+    depends_on:
+      - consul
     networks:
       - mesh
 
@@ -48,6 +67,32 @@ services:
       - mesh
 
   # ------------------------
+  # Service Bye
+  # ------------------------
+  service-bye:
+    build:
+      context: ./service-bye
+    environment:
+      CONSUL_HTTP_ADDR: "http://consul:8500"
+    depends_on:
+      - consul
+    networks:
+      - mesh
+
+  service-bye-sidecar:
+    image: envoyproxy/envoy:v1.30.0
+    depends_on:
+      - service-bye
+    volumes:
+      - ./service-bye/envoy.yaml:/etc/envoy/envoy.yaml
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "debug"]
+    ports:
+      - "20003:20003"   # listener
+      - "9903:9903"     # admin
+    networks:
+      - mesh
+
+  # ------------------------
   # Prometheus
   # ------------------------
   prometheus:
@@ -56,17 +101,6 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
-    networks:
-      - mesh
-
-  # ------------------------
-  # Consul
-  # ------------------------
-  consul:
-    image: hashicorp/consul:1.21.1
-    command: "agent -dev -client=0.0.0.0"
-    ports:
-      - "8500:8500"
     networks:
       - mesh
 

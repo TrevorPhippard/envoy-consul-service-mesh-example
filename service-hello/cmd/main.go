@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"service-hello/internal/consul"
 	"time"
 
@@ -15,12 +16,13 @@ func helloHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	agent := consul.NewAgent(&api.Config{Address: "127.0.0.1:8500"})
+	addr := os.Getenv("CONSUL_HTTP_ADDR")
+	agent := consul.NewAgent(&api.Config{Address: addr})
 
 	serviceCfg := consul.Config{
 		ServiceID:   "service-hello-1",
 		ServiceName: "service-hello",
-		Address:     "localhost",
+		Address:     "service-hello",
 		Port:        8080,
 		Tags:        []string{"hello"},
 		TTL:         8 * time.Second,
